@@ -3,41 +3,157 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>WebView Full Screen</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>WLF Barber</title>
+
     <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            height: 100%;
-            overflow: hidden;
-            background-color: #121212;
+        * {
+            box-sizing: border-box;
         }
 
-        /* Loading Spinner */
-        .loader {
-            border-top-color: #3b82f6;
-            -webkit-animation: spinner 1.5s linear infinite;
-            animation: spinner 1.5s linear infinite;
+        body, html {
+            margin: 0;
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) 
+                     env(safe-area-inset-bottom) env(safe-area-inset-left);
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+            background-color: #121212;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         }
-        @keyframes spinner {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+
+        /* CLASSE UTILITÁRIA */
+        .hidden { display: none !important; }
+
+        /* ----- OVERLAYS ----- */
+        .full-screen-overlay {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* LOADER */
+        #loader-overlay {
+            background-color: #000000;
+            z-index: 900;
+            transition: opacity 0.5s ease;
+        }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 5px solid #374151;
+            border-top: 5px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 15px;
+        }
+
+        .loading-text {
+            color: #9ca3af;
+            font-size: 14px;
+            animation: pulse 2s infinite;
+        }
+
+        /* MODAL OFFLINE */
+        #offline-modal {
+            background-color: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        /* Fallback quando o navegador não suporta blur */
+        @supports not (backdrop-filter: blur(4px)) {
+            #offline-modal {
+                background-color: rgba(0, 0, 0, 0.85);
+            }
+        }
+
+        .modal-card {
+            background-color: #1f2937;
+            border: 1px solid #374151;
+            border-radius: 12px;
+            padding: 40px 30px;
+            max-width: 320px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5);
+        }
+
+        .offline-icon svg {
+            width: 64px;
+            height: 64px;
+            stroke: #ef4444;
+            margin-bottom: 15px;
+        }
+
+        .modal-title {
+            color: #fff;
+            font-size: 20px;
+            font-weight: bold;
+            margin: 0 0 10px;
+        }
+
+        .modal-desc {
+            color: #d1d5db;
+            font-size: 15px;
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        /* IFRAME */
+        iframe {
+            border: none;
+            width: 100%;
+            height: 100%;
+            display: block;
+            z-index: 100;
+            opacity: 0;
+            transition: opacity 0.6s ease-in-out;
+            background-color: #fff;
+        }
+
+        /* ANIMAÇÕES */
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        @keyframes pulse {
+            0%,100% { opacity: 1; }
+            50% { opacity: 0.5; }
         }
     </style>
 </head>
-<body class="relative w-full h-full">
 
-    <!-- Loading Overlay (desaparece quando o iframe carrega) -->
-    <div id="loader-overlay" class="absolute inset-0 z-0 flex items-center justify-center bg-gray-900">
-        <div class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12 mb-4"></div>
+<body>
+
+    <!-- LOADER -->
+    <div id="loader-overlay" class="full-screen-overlay">
+        <div class="spinner"></div>
+        <p class="loading-text">Carregando aplicação...</p>
     </div>
 
-    <!-- Iframe / WebView -->
+    <!-- MODAL OFFLINE -->
+    <div id="offline-modal" class="full-screen-overlay hidden">
+        <div class="modal-card">
+            <div class="offline-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M18.364 5.636a9 9 0 010 12.728m0 0l-2.829-2.829m2.829 2.829L21 21M15.536 8.464a5 5 0 010 7.072m0 0l-2.829-2.829m-4.243 2.829a4.978 4.978 0 01-1.414-2.83m-1.414 5.658a9 9 0 01-2.167-9.238m7.824 2.167a1 1 0 111.414 1.414m-1.414-1.414L3 3m8.293 8.293l1.414 1.414" />
+                </svg>
+            </div>
+            <h2 class="modal-title">Sem Conexão</h2>
+            <p class="modal-desc">Aguardando conexão para reconectar automaticamente...</p>
+        </div>
+    </div>
+
+    <!-- IFRAME -->
     <iframe 
         id="webview-frame"
-        src="https://tihenrik.github.io/Elemento-SCS01/"
-        class="w-full h-full border-none relative z-10 bg-white"
+        src="https://tihenrik.github.io/Barbearia-final/"
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; geolocation"
         allowfullscreen>
     </iframe>
@@ -45,11 +161,63 @@
     <script>
         const iframe = document.getElementById('webview-frame');
         const loader = document.getElementById('loader-overlay');
+        const offlineModal = document.getElementById('offline-modal');
 
-        // Ocultar loader quando o iframe carregar
-        iframe.onload = function() {
-            loader.style.display = 'none';
+        let lastReload = 0;
+
+        /* ---- Função: revelar app ---- */
+        function revealApp() {
+            loader.style.opacity = '0';
+
+            setTimeout(() => {
+                loader.style.display = 'none';
+            }, 500);
+
+            iframe.style.opacity = '1';
+        }
+
+        /* ---- Recarga segura ---- */
+        function safeReload() {
+            const now = Date.now();
+            if (now - lastReload < 2000) return; // evita loop
+            lastReload = now;
+
+            try {
+                iframe.contentWindow.location.reload();
+            } catch {
+                iframe.src = iframe.src; // fallback
+            }
+        }
+
+        /* ---- Controle de conexão ---- */
+        function updateOnlineStatus() {
+            if (navigator.onLine) {
+                offlineModal.classList.add('hidden');
+
+                loader.style.display = 'flex';
+                loader.style.opacity = '1';
+                iframe.style.opacity = '0';
+
+                safeReload();
+            } else {
+                offlineModal.classList.remove('hidden');
+            }
+        }
+
+        /* ---- Eventos ---- */
+        window.addEventListener('online', updateOnlineStatus);
+        window.addEventListener('offline', updateOnlineStatus);
+
+        /* ---- Ao carregar o iframe ---- */
+        iframe.onload = () => {
+            if (navigator.onLine) revealApp();
         };
+
+        /* ---- Checagem inicial ---- */
+        window.addEventListener("load", () => {
+            if (!navigator.onLine) updateOnlineStatus();
+        });
     </script>
+
 </body>
 </html>
